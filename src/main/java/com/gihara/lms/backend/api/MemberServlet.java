@@ -15,8 +15,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Locale;
 
-@WebServlet(name = "MemberServlet", value = {"/members","/members/"})
+@WebServlet(name = "MemberServlet", value = {"/members","/members/*"})
 public class MemberServlet extends HttpServlet {
 
     @Resource(name="java:comp/env/jdbc/pool_library")
@@ -73,4 +75,38 @@ public class MemberServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getPathInfo() == null ||
+                !req.getPathInfo().substring(1).matches("\\d{9}[Vv][/]?")) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Member does not exist");
+            return;
+        } else if (req.getContentType() == null ||
+                !req.getContentType().toLowerCase(Locale.ROOT).startsWith("application/json")) {
+            resp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
+            return;
+        }
+        try{
+            Jsonb jsonb = JsonbBuilder.create();
+            MemberDTO member = jsonb.fromJson(req.getReader(), MemberDTO.class);
+        }catch (JsonbException e){
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid JSON");
+        }
+
+        try (Connection connection = pool.getConnection()) {
+            System.out.println(req.getPathInfo().substring(1));
+            PreparedStatement stm = connection.prepareStatement("SELECT * FROM member WHERE nic=?");
+            stm.setString(1, req.getPathInfo().substring(1));
+            ResultSet rst = stm.executeQuery();
+            if (!rst.next()) {
+                doPost(req, resp);
+            }else{
+                /* Update the existing member */
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
 }
