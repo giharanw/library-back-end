@@ -1,6 +1,8 @@
 package com.gihara.lms.backend.dto;
 
-public class MemberDTO {
+import java.io.Serializable;
+
+public class MemberDTO implements Serializable{
     private String nic;
     private String name;
     private String contact;
