@@ -14,6 +14,7 @@ import javax.xml.bind.ValidationException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 @WebServlet(name = "MemberServlet", value = {"/members","/members/"})
 public class MemberServlet extends HttpServlet {
@@ -47,7 +48,15 @@ public class MemberServlet extends HttpServlet {
             }
 
             try (Connection connection = pool.getConnection()) {
-                PreparedStatement stm = connection.prepareStatement("INSERT INTO member (nic, name, contact) VALUES (?,?,?)");
+                PreparedStatement stm = connection.prepareStatement("SELECT * FROM member WHERE nic=?");
+                stm.setString(1,member.getNic());
+                ResultSet rst = stm.executeQuery();
+                if (rst.next()){
+                    response.sendError(HttpServletResponse.SC_CONFLICT, "Member already exists");
+                    return;
+                }
+                stm = connection.prepareStatement("INSERT INTO member (nic, name, contact) VALUES (?,?,?)");
+
                 stm.setString(1, member.getNic());
                 stm.setString(2, member.getName());
                 stm.setString(3, member.getContact());
