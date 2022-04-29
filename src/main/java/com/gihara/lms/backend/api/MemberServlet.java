@@ -16,6 +16,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 @WebServlet(name = "MemberServlet", value = {"/members","/members/*"})
@@ -26,7 +28,41 @@ public class MemberServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if (request.getPathInfo() != null && !request.getPathInfo().equals("/")){
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
 
+        String query = request.getParameter("q");
+        query = "%"  + ((query == null) ? "": query) + "%";
+
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement stm = connection.
+                    prepareStatement("SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?");
+            stm.setString(1, query);
+            stm.setString(2, query);
+            stm.setString(3, query);
+            ResultSet rst = stm.executeQuery();
+
+            List<MemberDTO> members = new ArrayList<>();
+
+            while (rst.next()){
+                members.add((new MemberDTO(
+                        rst.getString("nic"),
+                        rst.getString("name"),
+                        rst.getString("contact")
+                )));
+            }
+
+            response.setContentType("application/json");
+            response.setHeader("X-Count", members.size() + "");
+
+            Jsonb jsonb = JsonbBuilder.create();
+            jsonb.toJson(members, response.getWriter());
+
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
+        }
     }
 
     @Override
