@@ -37,11 +37,32 @@ public class MemberServlet extends HttpServlet {
         query = "%"  + ((query == null) ? "": query) + "%";
 
         try (Connection connection = pool.getConnection()) {
-            PreparedStatement stm = connection.
-                    prepareStatement("SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?");
+            boolean pagination = request.getParameter("page") != null &&
+                    request.getParameter("size") != null;
+            String sql = null;
+
+            if (pagination) {
+                sql = "SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?";
+            } else {
+                sql = "SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?";
+            }
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            PreparedStatement stmCount = connection.prepareStatement("SELECT count(*) FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?");
+
             stm.setString(1, query);
             stm.setString(2, query);
             stm.setString(3, query);
+            stmCount.setString(1, query);
+            stmCount.setString(2, query);
+            stmCount.setString(3, query);
+
+            if (pagination){
+                int page = Integer.parseInt(request.getParameter("page"));
+                int size = Integer.parseInt(request.getParameter("size"));
+                stm.setInt(4, size);
+                stm.setInt(5, (page - 1) * size);
+            }
             ResultSet rst = stm.executeQuery();
 
             List<MemberDTO> members = new ArrayList<>();
@@ -55,8 +76,14 @@ public class MemberServlet extends HttpServlet {
             }
 
             response.setContentType("application/json");
-            response.setHeader("X-Count", members.size() + "");
-
+            if (!pagination) {
+                response.setHeader("X-Count", members.size() + "");
+            }else{
+                ResultSet rst2 = stmCount.executeQuery();
+                if (rst2.next()){
+                    response.setHeader("X-Count", rst2.getString(1));
+                }
+            }
             Jsonb jsonb = JsonbBuilder.create();
             jsonb.toJson(members, response.getWriter());
 
