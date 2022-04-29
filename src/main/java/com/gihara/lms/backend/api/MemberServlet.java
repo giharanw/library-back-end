@@ -96,10 +96,12 @@ public class MemberServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (req.getPathInfo() == null || req.getPathInfo().equals("/")){
+            System.out.println(req.getPathInfo());
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Unable to delete all members yet");
             return;
         }else if (req.getPathInfo() != null &&
                 !req.getPathInfo().substring(1).matches("\\d{9}[Vv][/]?")){
+            System.out.println(req.getPathInfo());
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Member not found");
             return;
         }
