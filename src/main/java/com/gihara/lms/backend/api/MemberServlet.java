@@ -39,13 +39,7 @@ public class MemberServlet extends HttpServlet {
         try (Connection connection = pool.getConnection()) {
             boolean pagination = request.getParameter("page") != null &&
                     request.getParameter("size") != null;
-            String sql = null;
-
-            if (pagination) {
-                sql = "SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ? LIMIT ? OFFSET ?";
-            } else {
-                sql = "SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?";
-            }
+            String sql = "SELECT * FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ? " + ((pagination) ? "LIMIT ? OFFSET ?": "");
 
             PreparedStatement stm = connection.prepareStatement(sql);
             PreparedStatement stmCount = connection.prepareStatement("SELECT count(*) FROM member WHERE nic LIKE ? OR name LIKE ? OR contact LIKE ?");
@@ -76,19 +70,16 @@ public class MemberServlet extends HttpServlet {
             }
 
             response.setContentType("application/json");
-            if (!pagination) {
-                response.setHeader("X-Count", members.size() + "");
-            }else{
-                ResultSet rst2 = stmCount.executeQuery();
-                if (rst2.next()){
-                    response.setHeader("X-Count", rst2.getString(1));
-                }
+            ResultSet rst2 = stmCount.executeQuery();
+            if (rst2.next()){
+                response.setHeader("X-Count", rst2.getString(1));
             }
             Jsonb jsonb = JsonbBuilder.create();
             jsonb.toJson(members, response.getWriter());
 
         } catch (SQLException throwable) {
             throwable.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
