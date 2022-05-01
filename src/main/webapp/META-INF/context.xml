@@ -2,6 +2,6 @@
 <Context>
     <Resource name="jdbc/pool_library" auth="Container" type="javax.sql.DataSource"
               maxTotal="10" maxIdle="10"
-              username="root" password="root" driverClassName="com.mysql.jdbc.Driver"
+              username="root" password="root" driverClassName="com.mysql.cj.jdbc.Driver"
               url="jdbc:mysql://localhost:3306/dep_library"/>
 </Context>

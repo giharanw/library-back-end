@@ -14,22 +14,22 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet(name = "BookServlet", value = {"/books","/books/"})
+@MultipartConfig(location = "/tmp", maxFileSize = 15 * 1024 * 1024)
+@WebServlet(name = "BookServlet", value = {"/books","/books/*"})
 public class BookServlet extends HttpServlet {
 
-    @Resource(name = "java:comp/env/jdbc/pool4library")
+    @Resource(name = "java:comp/env/jdbc/pool_library")
     private volatile DataSource pool;
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println("camee  Here..");
+        doSaveOrUpdate(req, resp);
 
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println(request.getContentType());
-        System.out.println(request.getPathInfo());
-        System.out.println(getServletInfo());
         doSaveOrUpdate(request, response);
     }
 
@@ -43,7 +43,7 @@ public class BookServlet extends HttpServlet {
         if (method.equals("POST") && (pathInfo!=null && !pathInfo.equals("/"))){
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
-        } else if (method.equals("PUT") && !(pathInfo != null && pathInfo.substring(1).matches("\\d+[/]?"))) {
+        } else if (method.equals("PUT") && !(pathInfo != null && pathInfo.substring(1).matches("\\d{10}[/]?"))) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND,"Book does not exist");
             return;
         }
@@ -64,7 +64,7 @@ public class BookServlet extends HttpServlet {
                 book = new BookDTO(isbn, name, author);
             }
             if (method.equals("POST") &&
-                    (book.getIsbn() == null || !book.getIsbn().matches("\\d+"))) {
+                    (book.getIsbn() == null || !book.getIsbn().matches("\\d{10}"))) {
                 throw new ValidationException("Invalid ISBN");
             } else if (book.getName() == null || !book.getName().matches(".+")) {
                 throw new ValidationException("Invalid Book Name");
