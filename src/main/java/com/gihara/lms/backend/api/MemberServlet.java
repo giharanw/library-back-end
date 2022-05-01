@@ -138,8 +138,7 @@ public class MemberServlet extends HttpServlet {
         }
         String method = req.getMethod();
         String pathInfo = req.getPathInfo();
-        if (method.equals("POST") && !((req.getServletPath().equalsIgnoreCase("/members") || req.getServletPath().equalsIgnoreCase("/members/")))) {
-//        if (method.equals("POST") && !(pathInfo == null || pathInfo.matches("/"))) {
+        if (method.equals("POST") && (pathInfo != null && !pathInfo.equals("/"))) {
             res.sendError(HttpServletResponse.SC_NOT_FOUND,"Invalid Path");
             return;
         } else if (method.equals("PUT") && !(pathInfo != null && pathInfo.substring(1).matches("\\d{9}[Vv][/]?"))) {
