@@ -39,7 +39,7 @@ public class IssueServlet extends HttpServlet {
             try (Connection connection = pool.getConnection()) {
                 PreparedStatement stm = connection.prepareStatement("SELECT * FROM book INNER JOIN member WHERE nic=? AND isbn=?");
                 stm.setString(1, issue.getNic());
-                stm.setString(1, issue.getIsbn());
+                stm.setString(2, issue.getIsbn());
                 if (!stm.executeQuery().next()){
                     throw new ValidationException("Invalid NIC or Invalid ISBN");
                 }
@@ -47,6 +47,7 @@ public class IssueServlet extends HttpServlet {
                 stm.setString(1, issue.getIsbn());
                 if (stm.executeQuery().next()){
                     resp.sendError(HttpServletResponse.SC_GONE, "Book is not available");
+                    return;
                 }
                 issue.setDate(Date.valueOf(LocalDate.now()));
                 stm = connection.prepareStatement("INSERT INTO issue (nic, isbn, date) VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
@@ -55,6 +56,7 @@ public class IssueServlet extends HttpServlet {
                 stm.setDate(3, issue.getDate());
                 if (stm.executeUpdate() != 1){
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to place the issue");
+                    return;
                 }
                 ResultSet generatedKeys = stm.getGeneratedKeys();
                 generatedKeys.next();
